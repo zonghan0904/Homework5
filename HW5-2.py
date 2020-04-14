@@ -4,31 +4,36 @@ import numpy as np
 df = pd.read_excel("HW5-2.xls")
 rows, columns = df.shape[0], df.shape[1]
 
-ss = np.mat(df.iloc[:,:])
+ss = np.array(df.iloc[:,:])
 q = np.random.random((4, 100))
-q = np.mat(q)
+q = np.array(q)
 
-EPOCHS = 50000
-LR = 0.0005
+EPOCHS = 10000
+LR = 0.005
+DATA = 100
 
-for epoch in range(EPOCHS):
-    loss = 0
-    for i in range(100):
-        q1, q2, q3, q4 = q[0,i], q[1, i], q[2, i], q[3, i]
-        ax, ay, az = ss[i, 0], ss[i, 1], ss[i, 2]
+for i in range(DATA):
+    # q1, q2, q3, q4 = q[0, i], q[1, i], q[2, i], q[3, i]
 
-        jac_tran = np.mat([[-2 * q3, 2 * q2,       0],
-                           [ 2 * q4, 2 * q1, -4 * q2],
-                           [-2 * q1, 2 * q4, -4 * q3],
-                           [ 2 * q2, 2 * q3,       0]])
+    for epoch in range(EPOCHS):
+        loss = 0
+        jac_tran = np.array([[-2 * q[2, i], 2 * q[1, i],       0],
+                             [ 2 * q[3, i], 2 * q[0, i], -4 * q[1, i]],
+                             [-2 * q[0, i], 2 * q[3, i], -4 * q[2, i]],
+                             [ 2 * q[1, i], 2 * q[2, i],       0]])
 
-        f = np.array([[2 * (q2 * q4 - q1 * q3) - ax],
-                      [2 * (q1 * q2 + q3 * q4) - ay],
-                      [2 * (0.5 - q2 * q2 - q3 * q3) - az]])
+        ss[i, :] = ss[i, :] / np.linalg.norm(ss[i, :])
 
-        q[:, i] += -LR * (jac_tran * f)
-        loss += np.sum(f)
-    print("epoch: %d, loss: %d"%(epoch, loss))
+        f = np.array([[2 * (q[1, i] * q[3, i] - q[0, i] * q[2, i]) - ss[i, 0]],
+                      [2 * (q[0, i] * q[1, i] + q[2, i] * q[3, i]) - ss[i, 1]],
+                      [2 * (0.5 - q[1, i] * q[1, i] - q[2, i] * q[2, i]) - ss[i, 2]]])
+
+        grad = np.dot(jac_tran, f)
+        update = - LR * grad
+        q[:, i] += update[:, 0]
+        loss = np.sum(f)
+        if (epoch % 1000 == 0):
+            print("data: {d}, epoch: {e}, loss: {l}".format(d = i, e = epoch, l = loss))
 
 print("\n====== gradient descent finished =====\n")
 
